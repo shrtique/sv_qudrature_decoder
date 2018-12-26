@@ -85,7 +85,7 @@ assign enable_status        = enable;                                           
                                                                                                       
 assign zero_mark_detected   = zero_mark_found;                                                        //to output
                                                                                                       
-assign steps_in_delta_cnt   = {steps_in_delta_integer, steps_in_delta_fraction[POSITION_SIZE/2-1:0]}; //concat integer and fracton (w/o overflow bit)
+assign steps_in_delta_cnt   = {steps_in_delta_integer, steps_in_delta_fraction}; //concat integer and fracton
                                                                                                       
 assign absolute_position    = {abs_position_integer, abs_position_fraction};                          //concat integer and fracton
 assign step_toggle          = absolute_position[0];                                                   //this bit toggles with the smallest change of encoder
