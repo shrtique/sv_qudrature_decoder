@@ -62,7 +62,7 @@ logic        [31:0]                debounce_cnt_a_b;        //timer to remove gl
 logic        [31:0]                debounce_cnt_z;          //timer to remove glitches and validate stable values of inputs z
 
 logic signed [POSITION_SIZE-1:0]   steps_in_delta_cnt;      //signed counter of encoder steps in 1 delta section (delta_size)
-logic        [POSITION_SIZE/2:0]   steps_in_delta_fraction; //fraction part of steps_in_delta_cnt, has size + 1bit to detect overflow
+logic        [POSITION_SIZE/2-1:0] steps_in_delta_fraction; //fraction part of steps_in_delta_cnt
 logic signed [POSITION_SIZE/2-1:0] steps_in_delta_integer;  //integer part of steps_in_delta_integer
 
 logic        [POSITION_SIZE/2-1:0] abs_position_fraction;   //fraction part of absolute_position, for rotation encoder it's fraction part of circle
@@ -91,7 +91,7 @@ assign absolute_position    = {abs_position_integer, abs_position_fraction};    
 assign step_toggle          = absolute_position[0];                                                   //this bit toggles with the smallest change of encoder
                                                                                                       
 assign steps_in_half_circle = steps_in_circle[POSITION_SIZE/2-1:1];                                   //calculating amount of steps in the half of the circle
-                                                                                                      
+                                                                                                                                                                      
 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -202,7 +202,7 @@ always_ff @ ( posedge i_clk, negedge i_aresetn )
               //step in delta counter
               steps_in_delta_fraction <= steps_in_delta_fraction + 1;
               //if it's overflow -> increase integer part
-              if ( steps_in_delta_fraction[POSITION_SIZE/2] == 1'b1 ) begin
+              if ( steps_in_delta_fraction == '1 ) begin 
                 steps_in_delta_fraction <= 0;
                 steps_in_delta_integer <= steps_in_delta_integer + 1;
               end
@@ -261,18 +261,6 @@ always_ff @ ( posedge i_clk, negedge i_aresetn )
               ( z_prev ^ z_new[1] )            
              ) begin
           
-          //when zero mark is found for the first time reset the positions
-          if ( ( z_new[1] ) && ( ~zero_mark_found ) ) begin
-            //set zero position
-            abs_position_integer    <= zero_position[POSITION_SIZE-1:POSITION_SIZE/2];
-            abs_position_fraction   <= zero_position[POSITION_SIZE/2-1:0];
-
-            steps_in_delta_integer  <= 0;
-            steps_in_delta_fraction <= 0;
-
-            zero_mark_found         <= 1'b1;	
-          end
-
           //clockwise direction
           if ( direction ) begin //it's better to use reg value here, cause ( b_prev ^ a_new[1] ) could be different in the moments of Z-action
 
@@ -287,6 +275,16 @@ always_ff @ ( posedge i_clk, negedge i_aresetn )
               if ( abs_position_fraction >= steps_in_half_circle ) begin
                 abs_position_integer <= abs_position_integer + 1;
               end
+
+              if ( ~zero_mark_found ) begin
+                abs_position_integer    <= zero_position[POSITION_SIZE-1:POSITION_SIZE/2];
+                abs_position_fraction   <= zero_position[POSITION_SIZE/2-1:0];
+
+                steps_in_delta_integer  <= 0;
+                steps_in_delta_fraction <= 0;
+
+                zero_mark_found         <= 1'b1;
+              end  
           	end	
 
           //counter-clockwise direction
@@ -301,8 +299,22 @@ always_ff @ ( posedge i_clk, negedge i_aresetn )
               if ( abs_position_fraction <= steps_in_half_circle ) begin
                 abs_position_integer <= abs_position_integer - 1;
               end
+
+              if ( ~zero_mark_found ) begin
+
+                abs_position_integer    <= zero_position[POSITION_SIZE-1:POSITION_SIZE/2] - 1;
+                abs_position_fraction   <= zero_position[POSITION_SIZE/2-1:0] - 1;
+
+                steps_in_delta_integer  <= '1; // minimum negative value ( 1st left position from 0 )
+                steps_in_delta_fraction <= '1; // minimum negative value ( 1st left position from 0 )
+
+                zero_mark_found         <= 1'b1;
+
+              end  
+
           	end	
-          end	
+          end
+
 
         end//Z-mark ACTION START
 

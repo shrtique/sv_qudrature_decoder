@@ -22,11 +22,11 @@
 
 module tb_quadrature_decoder();
 
-localparam POSITION_SIZE   = 32;
+localparam POSITION_SIZE   = 6;
 localparam DBNC_TIME       = 2;
 localparam ZERO_POSITION   = 0;
-localparam DELTA_SIZE      = 3;
-localparam STEPS_IN_CIRCLE = 4;
+localparam DELTA_SIZE      = 2;
+localparam STEPS_IN_CIRCLE = 2;
 
 
 //signsals
@@ -140,6 +140,19 @@ always
 always
   begin
   	  wait ( en );
+
+            //back
+      b = 1;        #10;
+      a = 1;        #10;
+      b = 0;        #10;
+      a = 0;        #10;
+
+      b = 1;        #10;
+      a = 1;        #10;
+      b = 0;        #10;
+      a = 0;        #10;
+
+            //forward
       a = 1; b = 0; #10;
       b = 1;        #10;
       a = 0;        #10;
@@ -150,17 +163,6 @@ always
       a = 0;        #10;
       b = 0;        #10;
 
-      //reverse test
-      b = 1;        #10;
-      a = 1;        #10;
-      b = 0;        #10;
-      a = 0;        #10;
-
-      b = 1;        #10;
-      a = 1;        #10;
-      b = 0;        #10;
-      a = 0;        #10;  
-     
   end  
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -169,12 +171,12 @@ initial
   	a = 0; b = 0; z = 0; zero_mark = 0;
     rd_en = 0; w_en = 0;
 
-    aresetn   = 0; en = 0; #10; 
+    aresetn   = 0; en = 0; #3; 
     aresetn   = 1;         #1;
     
-    en        = 1;       
-    zero_mark = 1;         #1;
-    zero_mark = 0;            
+    en        = 1;         #1;  
+    //zero_mark = 1;         #1;
+    //zero_mark = 0;            
     
     
     
@@ -184,11 +186,12 @@ initial
     // #39 #64 - it's sync case
     // #34 #59 - it's when Z is earlier then counted end of circ
     // #49 #63 - it's when Z is later then counted end of circ
+    // #24 #54 - It's when we start from back moves
     ///*
-    #39;
+    #24;
     zero_mark = 1; #1;
     zero_mark = 0; 
-    #64;
+    #54;
 
     zero_mark = 1; #1;
     zero_mark = 0;
